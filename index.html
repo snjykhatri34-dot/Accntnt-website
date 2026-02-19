@@ -1050,7 +1050,7 @@
             z-index: 1;
         }
 
-        .pricing .section-header {
+        .pricing .section-header.pricing-statement {
             text-align: center;
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
@@ -1061,40 +1061,30 @@
             position: relative;
         }
 
-        .pricing .section-header::before {
-            content: '60%';
-            position: absolute;
-            top: -40px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 6rem;
+        .pricing-statement .pricing-stat {
+            font-size: 5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #0371F4, #9DCFFF);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            opacity: 0.3;
-            font-family: 'General Sans', sans-serif;
             line-height: 1;
+            margin: 0 0 1rem 0;
+            color: rgba(79, 85, 138, 0.9);
+            font-family: 'General Sans', sans-serif;
+            letter-spacing: -0.02em;
         }
 
-        .pricing .section-header h2 {
-            font-size: 2.5rem;
+        .pricing-statement .pricing-headline {
+            font-size: 2rem;
             line-height: 1.4;
             color: var(--color-white);
             font-weight: 600;
-            position: relative;
-            z-index: 1;
+            margin: 0 auto 1.5rem;
+            max-width: 720px;
         }
 
-        .pricing .section-header h2::before {
-            content: '';
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
+        .pricing-statement .pricing-underline {
+            display: block;
             width: 100px;
             height: 4px;
+            margin: 0 auto;
             background: var(--gradient-accent);
             border-radius: 2px;
         }
@@ -1609,8 +1599,10 @@
     <!-- Savings Statement -->
     <section class="pricing" id="pricing">
         <div class="pricing-container">
-            <div class="section-header">
-                <h2>Our customers have saved at least 60% of costs by shifting to accntnt.ai</h2>
+            <div class="section-header pricing-statement">
+                <p class="pricing-stat">60%</p>
+                <h2 class="pricing-headline">Our customers have saved at least 60% of costs by shifting to accntnt.ai</h2>
+                <span class="pricing-underline" aria-hidden="true"></span>
             </div>
         </div>
     </section>
