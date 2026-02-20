@@ -1050,55 +1050,39 @@
             z-index: 1;
         }
 
-        .pricing .section-header.pricing-statement {
+        .savings-card {
             text-align: center;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: rgba(22, 17, 52, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
             padding: 4rem 3rem;
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
-            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         }
 
-        .pricing-statement .pricing-stat {
-            font-size: 5.5rem;
+        .savings-stat {
+            font-size: 4.5rem;
             font-weight: 700;
             line-height: 1;
-            margin: 0 0 1.25rem 0;
-            background: linear-gradient(135deg, #9DCFFF 0%, #0371F4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin: 0 0 1.5rem 0;
+            color: #6B9FFF;
             font-family: 'General Sans', sans-serif;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
         }
 
-        .pricing-statement .pricing-headline {
-            font-size: 1.75rem;
-            line-height: 1.5;
-            color: rgba(255, 255, 255, 0.95);
+        .savings-text {
+            font-size: 1.5rem;
+            line-height: 1.6;
+            color: #FFFFFF;
             font-weight: 500;
             margin: 0 auto;
-            max-width: 640px;
+            max-width: 560px;
         }
 
-        .pricing-statement .pricing-brand {
+        .savings-brand {
             font-weight: 700;
-            color: var(--color-white);
-            position: relative;
-            display: inline-block;
-        }
-
-        .pricing-statement .pricing-brand::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            bottom: 2px;
-            width: 100%;
-            height: 3px;
-            background: var(--gradient-accent);
-            border-radius: 2px;
+            color: #FFFFFF;
+            border-bottom: 3px solid #0371F4;
+            padding-bottom: 2px;
         }
 
         /* CTA Section */
@@ -1239,6 +1223,15 @@
         }
 
         @media (max-width: 768px) {
+            .savings-card {
+                padding: 3rem 1.5rem;
+            }
+            .savings-stat {
+                font-size: 3.5rem;
+            }
+            .savings-text {
+                font-size: 1.25rem;
+            }
             .hero h1 {
                 font-size: 2.75rem;
             }
@@ -1611,9 +1604,9 @@
     <!-- Savings Statement -->
     <section class="pricing" id="pricing">
         <div class="pricing-container">
-            <div class="section-header pricing-statement">
-                <p class="pricing-stat">60%</p>
-                <h2 class="pricing-headline">Our customers have saved at least 60% of costs by shifting to <span class="pricing-brand">accntnt.ai</span></h2>
+            <div class="savings-card">
+                <div class="savings-stat">60%</div>
+                <p class="savings-text">Our customers have saved at least 60% of costs by shifting to <strong class="savings-brand">accntnt.ai</strong></p>
             </div>
         </div>
     </section>
