@@ -1044,7 +1044,7 @@
         }
 
         .pricing-container {
-            max-width: 1800px;
+            max-width: 1500px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -1062,29 +1062,41 @@
         }
 
         .pricing-statement .pricing-stat {
-            font-size: 5rem;
+            font-size: 5.5rem;
             font-weight: 700;
             line-height: 1;
-            margin: 0 0 1rem 0;
-            color: rgba(79, 85, 138, 0.9);
+            margin: 0 0 1.25rem 0;
+            background: linear-gradient(135deg, #9DCFFF 0%, #0371F4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             font-family: 'General Sans', sans-serif;
             letter-spacing: -0.02em;
         }
 
         .pricing-statement .pricing-headline {
-            font-size: 2rem;
-            line-height: 1.4;
-            color: var(--color-white);
-            font-weight: 600;
-            margin: 0 auto 1.5rem;
-            max-width: 720px;
+            font-size: 1.75rem;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 500;
+            margin: 0 auto;
+            max-width: 640px;
         }
 
-        .pricing-statement .pricing-underline {
-            display: block;
-            width: 100px;
-            height: 4px;
-            margin: 0 auto;
+        .pricing-statement .pricing-brand {
+            font-weight: 700;
+            color: var(--color-white);
+            position: relative;
+            display: inline-block;
+        }
+
+        .pricing-statement .pricing-brand::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 2px;
+            width: 100%;
+            height: 3px;
             background: var(--gradient-accent);
             border-radius: 2px;
         }
@@ -1601,8 +1613,7 @@
         <div class="pricing-container">
             <div class="section-header pricing-statement">
                 <p class="pricing-stat">60%</p>
-                <h2 class="pricing-headline">Our customers have saved at least 60% of costs by shifting to accntnt.ai</h2>
-                <span class="pricing-underline" aria-hidden="true"></span>
+                <h2 class="pricing-headline">Our customers have saved at least 60% of costs by shifting to <span class="pricing-brand">accntnt.ai</span></h2>
             </div>
         </div>
     </section>
