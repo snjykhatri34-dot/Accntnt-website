@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HBS Alumni Finder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ── Global ── */
+    :root {
+      --navy: #0a0f1e;
+      --navy-light: #111827;
+      --navy-card: #141d2e;
+      --navy-border: #1e2d45;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --hbs-crimson: #a51c30;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--navy);
+      color: #f1f5f9;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--navy-card); }
+    ::-webkit-scrollbar-thumb { background: var(--navy-border); border-radius: 3px; }
+
+    /* ── Upload Zone ── */
+    #upload-zone {
+      border: 2px dashed var(--navy-border);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(59,130,246,0.06);
+    }
+
+    /* ── Progress bar ── */
+    #progress-fill {
+      transition: width 0.4s ease;
+    }
+
+    /* ── Table ── */
+    table { border-collapse: collapse; width: 100%; }
+    thead th {
+      background: #0d1526;
+      color: #94a3b8;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--navy-border);
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: rgba(59,130,246,0.04); }
+    tbody td { padding: 10px 14px; font-size: 0.85rem; vertical-align: middle; }
+    tbody tr.no-results td { color: #475569; font-style: italic; }
+
+    /* ── Category badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-blue   { background: rgba(59,130,246,0.18); color: #93c5fd; }
+    .badge-purple { background: rgba(139,92,246,0.18); color: #c4b5fd; }
+    .badge-green  { background: rgba(34,197,94,0.18);  color: #86efac; }
+    .badge-orange { background: rgba(249,115,22,0.18); color: #fdba74; }
+    .badge-pink   { background: rgba(236,72,153,0.18); color: #f9a8d4; }
+    .badge-teal   { background: rgba(20,184,166,0.18); color: #5eead4; }
+    .badge-yellow { background: rgba(234,179,8,0.18);  color: #fde047; }
+    .badge-gray   { background: rgba(100,116,139,0.18);color: #94a3b8; }
+
+    /* ── Connect button ── */
+    .btn-connect {
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      background: transparent;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-connect:hover { background: var(--accent); color: #fff; }
+    .btn-connect.sent {
+      border-color: #22c55e;
+      color: #22c55e;
+      cursor: default;
+    }
+    .btn-connect.sent:hover { background: transparent; color: #22c55e; }
+
+    /* ── Modal ── */
+    #modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    #modal-box {
+      background: var(--navy-card);
+      border: 1px solid var(--navy-border);
+      border-radius: 14px;
+      padding: 28px;
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+    }
+
+    /* ── Banners ── */
+    .banner {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+    .banner-yellow { background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); color: #fde047; }
+    .banner-red    { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; }
+
+    /* ── Misc ── */
+    input[type=number]::-webkit-inner-spin-button { opacity: 0.5; }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* profile thumbnail */
+    .avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--navy-border);
+      flex-shrink: 0;
+    }
+    .avatar-placeholder {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--navy-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #64748b;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ══════════════════ HEADER ══════════════════ -->
+  <header class="border-b border-[#1e2d45] px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <!-- HBS shield icon (inline SVG) -->
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#a51c30"/>
+        <text x="16" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="white" font-family="serif">H</text>
+      </svg>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white leading-none">HBS Alumni Finder</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Powered by LinkedIn · HBS Network</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="backend-status" class="text-xs text-slate-500 hidden">
+        <span id="backend-status-dot" class="inline-block w-2 h-2 rounded-full bg-slate-600 mr-1"></span>
+        <span id="backend-status-text">Checking…</span>
+      </div>
+      <button id="export-btn"
+        onclick="exportCSV()"
+        class="hidden text-xs border border-[#1e2d45] text-slate-400 hover:text-white hover:border-slate-500 px-3 py-1.5 rounded-lg transition-colors">
+        ↓ Export CSV
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════ MAIN ══════════════════ -->
+  <main class="max-w-7xl mx-auto px-6 py-8 space-y-6">
+
+    <!-- ── Backend error ── -->
+    <div id="backend-error" class="banner banner-red hidden">
+      ⚠ Backend not reachable — run: <code class="font-mono bg-black/30 px-1 rounded">python main.py</code>
+    </div>
+
+    <!-- ── CAPTCHA warning ── -->
+    <div id="captcha-banner" class="banner banner-yellow hidden">
+      ⚠ LinkedIn CAPTCHA detected — open terminal to resolve, then retry your search.
+    </div>
+
+    <!-- ── SESSION expired ── -->
+    <div id="session-error" class="banner banner-red hidden">
+      ⚠ LinkedIn session expired — run: <code class="font-mono bg-black/30 px-1 rounded">python setup_auth.py</code>
+      then restart the server.
+    </div>
+
+    <!-- ── UPLOAD ZONE ── -->
+    <div id="upload-section">
+      <div id="upload-zone"
+        class="rounded-xl p-10 text-center cursor-pointer select-none"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
+        ondrop="handleDrop(event)"
+        onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept=".csv" class="hidden" onchange="handleFileSelect(event)" />
+
+        <div id="upload-idle">
+          <div class="text-4xl mb-3">📂</div>
+          <p class="text-slate-300 font-medium">Drag &amp; drop your CSV here</p>
+          <p class="text-slate-500 text-sm mt-1">or click to browse</p>
+          <p class="text-slate-600 text-xs mt-2">Expected columns: Fund Name, AUM (Most Recent), Category, HQ</p>
+        </div>
+
+        <div id="upload-loading" class="hidden">
+          <div class="spinner mx-auto mb-3"></div>
+          <p class="text-slate-400 text-sm">Parsing CSV…</p>
+        </div>
+
+        <div id="upload-success" class="hidden">
+          <div class="text-4xl mb-2">✅</div>
+          <p id="upload-count" class="text-white font-semibold text-base"></p>
+          <p class="text-slate-500 text-xs mt-1">Click to replace file</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FILTERS BAR ── -->
+    <div id="filters-section" class="hidden">
+      <div class="bg-[#141d2e] border border-[#1e2d45] rounded-xl p-5">
+        <div class="flex flex-wrap gap-4 items-end">
+
+          <div class="flex-1 min-w-[180px]">
+            <label class="block text-xs text-slate-500 mb-1.5 font-medium uppercase tracking-wide">School</label>
+            <input id="filter-school" type="text" value="Harvard Business School"
+              class="w-full bg-[#0a0f1e] border border-[#1e2d45] rounded-lg px-3 py-2 text-sm text-white
+                     focus:outline-none focus:border-blue-500 transition-colors" />
+          </div>
+
+          <div class="w-36">
+            <label class="block text-xs text-slate-500 mb-1.5 font-medium uppercase tracking-wide">Grad Year From</label>
+            <input id="filter-year-min" type="number" placeholder="e.g. 2000" min="1950" max="2030"
+              class="w-full bg-[#0a0f1e] border border-[#1e2d45] rounded-lg px-3 py-2 text-sm text-white
+                     focus:outline-none focus:border-blue-500 transition-colors" />
+          </div>
+
+          <div class="w-36">
+            <label class="block text-xs text-slate-500 mb-1.5 font-medium uppercase tracking-wide">Grad Year To</label>
+            <input id="filter-year-max" type="number" placeholder="e.g. 2026" min="1950" max="2030"
+              class="w-full bg-[#0a0f1e] border border-[#1e2d45] rounded-lg px-3 py-2 text-sm text-white
+                     focus:outline-none focus:border-blue-500 transition-colors" />
+          </div>
+
+          <div class="flex-1 min-w-[220px]">
+            <label class="block text-xs text-slate-500 mb-1.5 font-medium uppercase tracking-wide">
+              Exclude Titles <span class="normal-case text-slate-600">(comma-separated)</span>
+            </label>
+            <input id="filter-exclude" type="text" value="Intern, Analyst"
+              class="w-full bg-[#0a0f1e] border border-[#1e2d45] rounded-lg px-3 py-2 text-sm text-white
+                     focus:outline-none focus:border-blue-500 transition-colors" />
+          </div>
+
+          <button id="search-btn" onclick="startSearch()"
+            class="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed
+                   text-white font-semibold px-6 py-2 rounded-lg text-sm transition-colors
+                   flex items-center gap-2 whitespace-nowrap">
+            <span id="search-btn-icon">🔍</span>
+            <span id="search-btn-text">Search LinkedIn</span>
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROGRESS ── -->
+    <div id="progress-section" class="hidden">
+      <div class="bg-[#141d2e] border border-[#1e2d45] rounded-xl p-5">
+        <div class="flex items-center justify-between mb-2">
+          <span id="progress-label" class="text-sm text-slate-300">Initializing…</span>
+          <span id="progress-fraction" class="text-xs text-slate-500 font-mono"></span>
+        </div>
+        <div class="w-full bg-[#0a0f1e] rounded-full h-2 overflow-hidden">
+          <div id="progress-fill" class="h-full bg-blue-500 rounded-full" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RESULTS COUNTER ── -->
+    <div id="results-header" class="hidden flex items-center justify-between">
+      <span id="results-count" class="text-sm text-slate-400 font-medium"></span>
+    </div>
+
+    <!-- ── RESULTS TABLE ── -->
+    <div id="table-section" class="hidden">
+      <div class="bg-[#141d2e] border border-[#1e2d45] rounded-xl overflow-hidden">
+        <div class="overflow-x-auto" style="max-height: 65vh; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Title</th>
+                <th>Fund</th>
+                <th>AUM</th>
+                <th>Category</th>
+                <th>HQ</th>
+                <th>HBS Grad Year</th>
+                <th>Connect</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ══════════════════ CONNECT MODAL ══════════════════ -->
+  <div id="modal-overlay" class="hidden" onclick="closeModalOnOverlay(event)">
+    <div id="modal-box">
+      <button onclick="closeModal()"
+        class="absolute top-3 right-4 text-slate-500 hover:text-white text-xl leading-none">&times;</button>
+
+      <h2 class="text-base font-semibold text-white mb-4">Send Connection Request</h2>
+
+      <!-- Profile preview -->
+      <div class="flex items-center gap-3 mb-5 p-3 bg-[#0a0f1e] rounded-lg border border-[#1e2d45]">
+        <div id="modal-avatar-wrap"></div>
+        <div>
+          <div id="modal-name" class="font-semibold text-white text-sm"></div>
+          <div id="modal-title" class="text-slate-400 text-xs mt-0.5"></div>
+          <div id="modal-fund" class="text-slate-500 text-xs mt-0.5"></div>
+        </div>
+      </div>
+
+      <label class="block text-xs text-slate-500 mb-1.5 font-medium uppercase tracking-wide">
+        Connection Message <span class="normal-case text-slate-600">(max 300 chars)</span>
+      </label>
+      <textarea id="modal-message" rows="7" maxlength="300"
+        class="w-full bg-[#0a0f1e] border border-[#1e2d45] rounded-lg px-3 py-2.5
+               text-sm text-white focus:outline-none focus:border-blue-500 transition-colors
+               resize-none mb-1"></textarea>
+      <div id="char-count" class="text-right text-xs text-slate-600 mb-3">0 / 300</div>
+
+      <div id="modal-error" class="text-red-400 text-sm mb-3 hidden"></div>
+
+      <div class="flex gap-3">
+        <button id="modal-send-btn" onclick="sendConnection()"
+          class="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50
+                 text-white font-semibold py-2 rounded-lg text-sm transition-colors
+                 flex items-center justify-center gap-2">
+          <span id="modal-send-spinner" class="spinner hidden"></span>
+          <span>Send Request</span>
+        </button>
+        <button onclick="closeModal()"
+          class="px-5 border border-[#1e2d45] text-slate-400 hover:text-white
+                 hover:border-slate-500 rounded-lg text-sm transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ JAVASCRIPT ══════════════════ -->
+  <script>
+    /* ─────────────────────── State ─────────────────────── */
+    const API = 'http://localhost:8000';
+    let parsedFunds    = [];
+    let allResults     = [];
+    let currentProfile = null;
+
+    /* ─────────────────────── Category badge ─────────────────────── */
+    const CATEGORY_COLORS = {
+      'crossover':     'badge-blue',
+      'growth':        'badge-green',
+      'venture':       'badge-purple',
+      'buyout':        'badge-orange',
+      'hedge':         'badge-yellow',
+      'credit':        'badge-teal',
+      'seed':          'badge-pink',
+      'early':         'badge-purple',
+      'late':          'badge-blue',
+      'multi':         'badge-gray',
+    };
+
+    function categoryBadge(cat) {
+      if (!cat) return '<span class="text-slate-600 text-xs">—</span>';
+      const lower = cat.toLowerCase();
+      let cls = 'badge-gray';
+      for (const [kw, c] of Object.entries(CATEGORY_COLORS)) {
+        if (lower.includes(kw)) { cls = c; break; }
+      }
+      return `<span class="badge ${cls}">${escHtml(cat)}</span>`;
+    }
+
+    /* ─────────────────────── Utilities ─────────────────────── */
+    function escHtml(s) {
+      if (s === null || s === undefined) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    const show = id => document.getElementById(id)?.classList.remove('hidden');
+    const hide = id => document.getElementById(id)?.classList.add('hidden');
+    const el   = id => document.getElementById(id);
+
+    function firstName(fullName) {
+      return (fullName || '').split(' ')[0] || 'there';
+    }
+
+    function defaultMessage(name) {
+      return `Hi ${firstName(name)},\n\nI'm Sanjay, a first-year at HBS (Class of '27) with a background in growth investing at Accel India. I'll be in SF the week of March 14 and would love to grab a coffee if you have 30 minutes and have a conversation.`;
+    }
+
+    /* ─────────────────────── Backend health ─────────────────────── */
+    async function checkBackend() {
+      el('backend-status').classList.remove('hidden');
+      try {
+        const r = await fetch(`${API}/docs`, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(3500),
+        });
+        if (r.ok || r.status < 500) {
+          el('backend-status-dot').className = 'inline-block w-2 h-2 rounded-full bg-green-500 mr-1';
+          el('backend-status-text').textContent = 'Backend connected';
+          hide('backend-error');
+          return true;
+        }
+      } catch (_) {}
+      el('backend-status-dot').className = 'inline-block w-2 h-2 rounded-full bg-red-500 mr-1';
+      el('backend-status-text').textContent = 'Backend offline';
+      show('backend-error');
+      return false;
+    }
+
+    /* ─────────────────────── Drag & Drop ─────────────────────── */
+    function handleDragOver(e) {
+      e.preventDefault();
+      el('upload-zone').classList.add('drag-over');
+    }
+    function handleDragLeave() {
+      el('upload-zone').classList.remove('drag-over');
+    }
+    function handleDrop(e) {
+      e.preventDefault();
+      el('upload-zone').classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) uploadFile(file);
+    }
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) uploadFile(file);
+      // Reset input so re-selecting same file triggers change
+      e.target.value = '';
+    }
+
+    /* ─────────────────────── Upload ─────────────────────── */
+    async function uploadFile(file) {
+      if (!file.name.endsWith('.csv')) {
+        alert('Please upload a .csv file.');
+        return;
+      }
+
+      hide('upload-idle');
+      hide('upload-success');
+      show('upload-loading');
+
+      const fd = new FormData();
+      fd.append('file', file);
+
+      try {
+        const r = await fetch(`${API}/api/upload`, { method: 'POST', body: fd });
+        const data = await r.json().catch(() => ({}));
+
+        if (!r.ok) throw new Error(data.detail || `Server error ${r.status}`);
+
+        parsedFunds = data.funds || [];
+        if (!parsedFunds.length) throw new Error('No fund names found in CSV.');
+
+        el('upload-count').textContent =
+          `${parsedFunds.length} fund${parsedFunds.length !== 1 ? 's' : ''} loaded`;
+
+        hide('upload-loading');
+        show('upload-success');
+        show('filters-section');
+        hide('backend-error');
+
+      } catch (err) {
+        hide('upload-loading');
+        show('upload-idle');
+        if (err.message.toLowerCase().includes('fetch') ||
+            err.message.toLowerCase().includes('failed to fetch') ||
+            err.message.toLowerCase().includes('networkerror')) {
+          show('backend-error');
+        } else {
+          alert('Upload error: ' + err.message);
+        }
+      }
+    }
+
+    /* ─────────────────────── Search ─────────────────────── */
+    async function startSearch() {
+      if (!parsedFunds.length) { alert('Please upload a CSV first.'); return; }
+
+      // Reset banners
+      hide('backend-error');
+      hide('captcha-banner');
+      hide('session-error');
+
+      // Read filters
+      const school  = el('filter-school').value.trim() || 'Harvard Business School';
+      const yearMin = parseInt(el('filter-year-min').value) || null;
+      const yearMax = parseInt(el('filter-year-max').value) || null;
+      const exclude = el('filter-exclude').value
+        .split(',').map(s => s.trim()).filter(Boolean);
+
+      // Button → loading state
+      const searchBtn = el('search-btn');
+      searchBtn.disabled = true;
+      el('search-btn-icon').textContent = '';
+      el('search-btn-icon').innerHTML   = '<span class="spinner"></span>';
+      el('search-btn-text').textContent = 'Searching…';
+
+      // Progress bar
+      show('progress-section');
+      el('progress-fill').style.width = '0%';
+      el('progress-label').textContent = 'Initializing…';
+      el('progress-fraction').textContent = '';
+
+      // Clear old results
+      allResults = [];
+      el('results-tbody').innerHTML = '';
+      hide('results-header');
+      show('table-section');
+      hide('export-btn');
+
+      const payload = {
+        funds: parsedFunds,
+        filters: {
+          school,
+          grad_year_min: yearMin,
+          grad_year_max: yearMax,
+          titles_exclude: exclude,
+        },
+      };
+
+      try {
+        const resp = await fetch(`${API}/api/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${resp.status}`);
+        }
+
+        // Stream NDJSON
+        const reader  = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop(); // keep incomplete tail
+
+          for (const line of lines) {
+            if (line.trim()) {
+              try { handleStreamLine(JSON.parse(line)); } catch (_) {}
+            }
+          }
+        }
+
+        // Flush remainder
+        if (buf.trim()) {
+          try { handleStreamLine(JSON.parse(buf)); } catch (_) {}
+        }
+
+      } catch (err) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes('fetch') || msg.includes('failed') || msg.includes('network')) {
+          show('backend-error');
+        } else {
+          alert('Search error: ' + err.message);
+        }
+      }
+
+      // Restore button
+      searchBtn.disabled = false;
+      el('search-btn-icon').innerHTML   = '🔍';
+      el('search-btn-text').textContent = 'Search LinkedIn';
+
+      updateResultsCount();
+      show('results-header');
+      if (allResults.length) show('export-btn');
+    }
+
+    function handleStreamLine(obj) {
+      if (!obj) return;
+
+      if (obj.__error__) {
+        show('session-error');
+        return;
+      }
+      if (obj.__captcha__) {
+        show('captcha-banner');
+        return;
+      }
+      if (obj.__progress__) {
+        const pct = Math.round((obj.current / obj.total) * 100);
+        el('progress-fill').style.width   = pct + '%';
+        el('progress-label').textContent  = `Searching ${obj.fund_name}…`;
+        el('progress-fraction').textContent = `(${obj.current}/${obj.total})`;
+        return;
+      }
+      if (obj.__no_results__) {
+        appendNoResultsRow(obj.fund_name);
+        return;
+      }
+
+      // Regular profile result
+      const idx = allResults.length;
+      allResults.push(obj);
+      appendProfileRow(obj, idx);
+      updateResultsCount();
+    }
+
+    /* ─────────────────────── Table ─────────────────────── */
+    function appendProfileRow(p, idx) {
+      const tbody = el('results-tbody');
+      const row   = document.createElement('tr');
+      row.id      = `row-${idx}`;
+
+      const avatarHtml = p.photo_url
+        ? `<img src="${escHtml(p.photo_url)}" class="avatar"
+               onerror="this.outerHTML='<div class=\\'avatar-placeholder\\'>👤</div>'">`
+        : `<div class="avatar-placeholder">👤</div>`;
+
+      const gradYearHtml = p.hbs_grad_year
+        ? `<span class="text-slate-200 font-mono">${p.hbs_grad_year}</span>`
+        : `<span class="text-slate-600">—</span>`;
+
+      row.innerHTML = `
+        <td>
+          <div class="flex items-center gap-2">
+            ${avatarHtml}
+            <a href="${escHtml(p.linkedin_url)}" target="_blank" rel="noopener noreferrer"
+               class="text-blue-400 hover:text-blue-300 hover:underline font-medium leading-tight">
+              ${escHtml(p.name)}
+            </a>
+          </div>
+        </td>
+        <td>
+          <span class="text-slate-300 block max-w-[200px] truncate" title="${escHtml(p.title)}">
+            ${escHtml(p.title) || '<span class="text-slate-600">—</span>'}
+          </span>
+        </td>
+        <td class="text-slate-300 whitespace-nowrap">${escHtml(p.fund_name)}</td>
+        <td class="text-slate-400 text-xs whitespace-nowrap font-mono">${escHtml(p.fund_aum) || '—'}</td>
+        <td>${categoryBadge(p.fund_category)}</td>
+        <td class="text-slate-400 text-xs whitespace-nowrap">${escHtml(p.fund_hq) || '—'}</td>
+        <td>${gradYearHtml}</td>
+        <td>
+          <button class="btn-connect" onclick="openModal(${idx})">Connect</button>
+        </td>
+      `;
+
+      tbody.appendChild(row);
+    }
+
+    function appendNoResultsRow(fundName) {
+      const tbody = el('results-tbody');
+      const row   = document.createElement('tr');
+      row.classList.add('no-results');
+      row.innerHTML = `
+        <td colspan="8" class="py-3 pl-4">
+          No HBS alumni found at <span class="text-slate-500">${escHtml(fundName)}</span>
+        </td>`;
+      tbody.appendChild(row);
+    }
+
+    function updateResultsCount() {
+      const funds = new Set(allResults.map(r => r.fund_name)).size;
+      el('results-count').textContent =
+        `Found ${allResults.length} alumni across ${funds} fund${funds !== 1 ? 's' : ''}`;
+    }
+
+    /* ─────────────────────── Modal ─────────────────────── */
+    function openModal(idx) {
+      const p = allResults[idx];
+      if (!p) return;
+      currentProfile = { ...p, idx };
+
+      // Avatar
+      const wrap = el('modal-avatar-wrap');
+      wrap.innerHTML = p.photo_url
+        ? `<img src="${escHtml(p.photo_url)}"
+               class="w-14 h-14 rounded-full object-cover border border-[#1e2d45]"
+               onerror="this.outerHTML='<div class=\\'w-14 h-14 rounded-full bg-[#1e2d45] flex items-center justify-center text-2xl\\'>👤</div>'">`
+        : `<div class="w-14 h-14 rounded-full bg-[#1e2d45] flex items-center justify-center text-2xl">👤</div>`;
+
+      el('modal-name').textContent  = p.name  || '';
+      el('modal-title').textContent = p.title || '';
+      el('modal-fund').textContent  = p.fund_name || '';
+
+      const msg = defaultMessage(p.name);
+      el('modal-message').value = msg;
+      el('char-count').textContent = `${msg.length} / 300`;
+
+      hide('modal-error');
+      show('modal-overlay');
+      el('modal-message').focus();
+    }
+
+    function closeModal() {
+      hide('modal-overlay');
+      currentProfile = null;
+    }
+
+    function closeModalOnOverlay(e) {
+      if (e.target === el('modal-overlay')) closeModal();
+    }
+
+    // Character counter
+    el('modal-message').addEventListener('input', function () {
+      el('char-count').textContent = `${this.value.length} / 300`;
+    });
+
+    async function sendConnection() {
+      if (!currentProfile) return;
+
+      const message = el('modal-message').value.trim();
+      if (!message) { alert('Please enter a message.'); return; }
+
+      el('modal-send-btn').disabled = true;
+      show('modal-send-spinner');
+      hide('modal-error');
+
+      try {
+        const r = await fetch(`${API}/api/connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            linkedin_url: currentProfile.linkedin_url,
+            message,
+          }),
+        });
+        const data = await r.json().catch(() => ({}));
+
+        if (data.success) {
+          closeModal();
+          // Mark the row button as sent
+          const row = el(`row-${currentProfile.idx}`);
+          if (row) {
+            const btn = row.querySelector('.btn-connect');
+            if (btn) {
+              btn.textContent = '✓ Sent';
+              btn.classList.add('sent');
+              btn.onclick = null;
+            }
+          }
+        } else {
+          show('modal-error');
+          el('modal-error').textContent =
+            data.error || 'Could not send — profile may have connection restrictions.';
+        }
+      } catch (_) {
+        show('modal-error');
+        el('modal-error').textContent =
+          'Could not send — profile may have connection restrictions.';
+      }
+
+      el('modal-send-btn').disabled = false;
+      hide('modal-send-spinner');
+    }
+
+    /* ─────────────────────── CSV Export ─────────────────────── */
+    function exportCSV() {
+      if (!allResults.length) return;
+
+      const headers = [
+        'Name','LinkedIn URL','Photo URL','Title',
+        'Fund','AUM','Category','HQ','HBS Grad Year'
+      ];
+
+      const rows = allResults.map(r => [
+        r.name, r.linkedin_url, r.photo_url, r.title,
+        r.fund_name, r.fund_aum, r.fund_category, r.fund_hq,
+        r.hbs_grad_year ?? '',
+      ]);
+
+      const csv = [headers, ...rows]
+        .map(row => row.map(cell =>
+          `"${String(cell ?? '').replace(/"/g, '""')}"`
+        ).join(','))
+        .join('\r\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = Object.assign(document.createElement('a'), {
+        href: url,
+        download: `hbs-alumni-${new Date().toISOString().slice(0,10)}.csv`,
+      });
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /* ─────────────────────── Keyboard shortcuts ─────────────────────── */
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    /* ─────────────────────── Init ─────────────────────── */
+    checkBackend();
+  </script>
+</body>
+</html>
