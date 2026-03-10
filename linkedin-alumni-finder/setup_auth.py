@@ -10,10 +10,24 @@ Run once before starting main.py:
 
 import asyncio
 import json
+import os
 import sys
 from playwright.async_api import async_playwright
 
 SESSION_FILE = "linkedin_session.json"
+
+
+def _find_chromium_executable():
+    cache_root = os.path.expanduser("~/.cache/ms-playwright")
+    if not os.path.isdir(cache_root):
+        return None
+    for entry in sorted(os.listdir(cache_root), reverse=True):
+        if entry.startswith("chromium"):
+            for sub in ("chrome-linux/chrome", "chrome-headless-shell-linux64/chrome-headless-shell"):
+                candidate = os.path.join(cache_root, entry, sub)
+                if os.path.isfile(candidate):
+                    return candidate
+    return None
 
 
 async def setup_auth():
@@ -27,10 +41,11 @@ async def setup_auth():
     print()
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            headless=False,
-            args=["--start-maximized"],
-        )
+        chromium_exe = _find_chromium_executable()
+        launch_kwargs = dict(headless=False, args=["--start-maximized"])
+        if chromium_exe:
+            launch_kwargs["executable_path"] = chromium_exe
+        browser = await p.chromium.launch(**launch_kwargs)
         context = await browser.new_context(
             viewport={"width": 1280, "height": 800},
             user_agent=(

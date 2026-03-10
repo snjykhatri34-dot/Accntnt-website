@@ -32,6 +32,23 @@ from pydantic import BaseModel
 # ---------------------------------------------------------------------------
 
 SESSION_FILE = "linkedin_session.json"
+
+# Playwright downloads browsers into versioned subdirs. When the installed
+# Playwright version doesn't match the cached browser, fall back to any
+# chromium build already present in the cache directory.
+def _find_chromium_executable() -> Optional[str]:
+    cache_root = os.path.expanduser("~/.cache/ms-playwright")
+    if not os.path.isdir(cache_root):
+        return None
+    for entry in sorted(os.listdir(cache_root), reverse=True):
+        if entry.startswith("chromium"):
+            for sub in ("chrome-linux/chrome", "chrome-headless-shell-linux64/chrome-headless-shell"):
+                candidate = os.path.join(cache_root, entry, sub)
+                if os.path.isfile(candidate):
+                    return candidate
+    return None
+
+CHROMIUM_EXECUTABLE: Optional[str] = _find_chromium_executable()
 MAX_PROFILES_PER_FUND = 10
 DELAY_MIN = 2.0
 DELAY_MAX = 4.0
@@ -112,10 +129,13 @@ def load_session() -> dict:
 async def make_context(playwright_instance) -> BrowserContext:
     """Create a browser context with the saved LinkedIn session."""
     session = load_session()
-    browser: Browser = await playwright_instance.chromium.launch(
+    launch_kwargs: dict = dict(
         headless=True,
         args=["--no-sandbox", "--disable-dev-shm-usage"],
     )
+    if CHROMIUM_EXECUTABLE:
+        launch_kwargs["executable_path"] = CHROMIUM_EXECUTABLE
+    browser: Browser = await playwright_instance.chromium.launch(**launch_kwargs)
     context: BrowserContext = await browser.new_context(
         storage_state=session,
         viewport={"width": 1280, "height": 800},
