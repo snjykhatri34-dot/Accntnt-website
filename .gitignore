@@ -1,0 +1,8 @@
+# LinkedIn session — contains auth cookies, never commit this
+linkedin_session.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
